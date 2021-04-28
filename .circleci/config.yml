@@ -622,6 +622,10 @@ workflows:
             - go-fmt-and-vet-helm-gen
       - test-helm-gen
       - unit-helm
+      - acceptance-kind-1-20
+      - acceptance-eks-1-17
+      - acceptance-aks-1-18
+      - acceptance-gke-1-16
       - acceptance:
           requires:
             - unit-helm
