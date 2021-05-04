@@ -223,6 +223,38 @@ jobs:
       - run: mkdir -p $TEST_RESULTS
       - run-acceptance-tests:
           failfast: true
+          additional-flags: -use-kind -kubecontext="kind-dc1" -secondary-kubecontext="kind-dc2"
+      - store_test_results:
+          path: /tmp/test-results
+      - store_artifacts:
+          path: /tmp/test-results
+
+  acceptance-tproxy:
+    environment:
+      - TEST_RESULTS: /tmp/test-results
+    machine:
+      image: ubuntu-2004:202010-01
+    resource_class: xlarge
+    parallelism: 6
+    steps:
+      - checkout
+      - install-prereqs
+      - create-kind-clusters:
+          version: "v1.19.4"
+      - restore_cache:
+          keys:
+            - consul-helm-modcache-v2-{{ checksum "test/acceptance/go.mod" }}
+      - run:
+          name: go mod download
+          working_directory: test/acceptance
+          command: go mod download
+      - save_cache:
+          key: consul-helm-modcache-v2-{{ checksum "test/acceptance/go.mod" }}
+          paths:
+            - ~/.go_workspace/pkg/mod
+      - run: mkdir -p $TEST_RESULTS
+      - run-acceptance-tests:
+          failfast: true
           additional-flags: -use-kind -kubecontext="kind-dc1" -secondary-kubecontext="kind-dc2" -enable-transparent-proxy
       - store_test_results:
           path: /tmp/test-results
@@ -299,9 +331,9 @@ jobs:
             terraform destroy -var project=${CLOUDSDK_CORE_PROJECT} -auto-approve
           when: always
 
-      - slack/status:
-          fail_only: true
-          failure_message: "GKE acceptance tests failed. Check the logs at: ${CIRCLE_BUILD_URL}"
+#      - slack/status:
+#          fail_only: true
+#          failure_message: "GKE acceptance tests failed. Check the logs at: ${CIRCLE_BUILD_URL}"
 
   acceptance-aks-1-18:
     environment:
@@ -354,9 +386,9 @@ jobs:
             terraform destroy -auto-approve
           when: always
 
-      - slack/status:
-          fail_only: true
-          failure_message: "AKS acceptance tests failed. Check the logs at: ${CIRCLE_BUILD_URL}"
+#      - slack/status:
+#          fail_only: true
+#          failure_message: "AKS acceptance tests failed. Check the logs at: ${CIRCLE_BUILD_URL}"
 
   acceptance-eks-1-17:
     environment:
@@ -420,9 +452,9 @@ jobs:
             terraform destroy -auto-approve
           when: always
 
-      - slack/status:
-          fail_only: true
-          failure_message: "EKS acceptance tests failed. Check the logs at: ${CIRCLE_BUILD_URL}"
+#      - slack/status:
+#          fail_only: true
+#          failure_message: "EKS acceptance tests failed. Check the logs at: ${CIRCLE_BUILD_URL}"
 
   acceptance-openshift:
     environment:
@@ -465,9 +497,9 @@ jobs:
           path: /tmp/test-results
       - store_artifacts:
           path: /tmp/test-results
-      - slack/status:
-          fail_only: true
-          failure_message: "OpenShift acceptance tests failed. Check the logs at: ${CIRCLE_BUILD_URL}"
+#      - slack/status:
+#          fail_only: true
+#          failure_message: "OpenShift acceptance tests failed. Check the logs at: ${CIRCLE_BUILD_URL}"
 
   acceptance-kind-1-20:
     environment:
@@ -498,9 +530,9 @@ jobs:
           path: /tmp/test-results
       - store_artifacts:
           path: /tmp/test-results
-      - slack/status:
-          fail_only: true
-          failure_message: "Acceptance tests against Kind with Kubernetes v1.20 failed. Check the logs at: ${CIRCLE_BUILD_URL}"
+#      - slack/status:
+#          fail_only: true
+#          failure_message: "Acceptance tests against Kind with Kubernetes v1.20 failed. Check the logs at: ${CIRCLE_BUILD_URL}"
 
   go-fmt-and-vet-helm-gen:
     executor: go
@@ -622,10 +654,6 @@ workflows:
             - go-fmt-and-vet-helm-gen
       - test-helm-gen
       - unit-helm
-      - acceptance-kind-1-20
-      - acceptance-eks-1-17
-      - acceptance-aks-1-18
-      - acceptance-gke-1-16
       - acceptance:
           requires:
             - unit-helm
@@ -634,6 +662,14 @@ workflows:
           requires:
             - unit-helm
             - unit-acceptance-framework
+      - acceptance-tproxy:
+          requires:
+            - unit-helm
+            - unit-acceptance-framework
+      - acceptance-gke-1-16
+      - acceptance-eks-1-17
+      - acceptance-aks-1-18
+      - acceptance-kind-1-20
   nightly-acceptance-tests:
     triggers:
       - schedule:
