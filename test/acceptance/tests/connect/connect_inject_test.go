@@ -199,10 +199,7 @@ func TestConnectInject_RestartConsulClients(t *testing.T) {
 	ctx := suite.Environment().DefaultContext(t)
 
 	helmValues := map[string]string{
-		"global.image":                        "hashicorp/consul:1.10.0-beta2",
-		"server.enterpriseLicense.secretName": "",
-		"server.enterpriseLicense.secretKey":  "",
-		"connectInject.enabled":               "true",
+		"connectInject.enabled": "true",
 	}
 
 	releaseName := helpers.RandomName()
