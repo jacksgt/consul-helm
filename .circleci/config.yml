@@ -464,7 +464,7 @@ jobs:
   acceptance-openshift:
     environment:
       TEST_RESULTS: /tmp/test-results
-    parallelism: 2
+    parallelism: 3
     docker:
       # This image is built from test/docker/Test.dockerfile
       - image: docker.mirror.hashicorp.services/hashicorpdev/consul-helm-test:0.9.0
@@ -497,7 +497,7 @@ jobs:
       - run: mkdir -p $TEST_RESULTS
 
       - run-acceptance-tests:
-          consul-k8s-image: ishustava/consul-k8s-dev:05-21-2021-fd4dd7d
+          consul-k8s-image: ishustava/consul-k8s-dev:05-21-2021-4f1a0ca
           additional-flags: -kubeconfig="$primary_kubeconfig" -secondary-kubeconfig="$secondary_kubeconfig" -enable-openshift
 
       - store_test_results:

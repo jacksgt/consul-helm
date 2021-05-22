@@ -191,6 +191,16 @@ spec:
                 -consul-sidecar-cpu-request={{ $consulSidecarResources.requests.cpu }} \
                 {{- end }}
                 {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /readyz/ready
+              port: 9445
+              scheme: HTTP
+            failureThreshold: 2
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            successThreshold: 1
+            timeoutSeconds: 5
           volumeMounts:
           - name: certs
             mountPath: /etc/connect-injector/certs

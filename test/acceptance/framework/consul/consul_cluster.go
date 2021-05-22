@@ -112,6 +112,8 @@ func (h *HelmCluster) Create(t *testing.T) {
 		h.Destroy(t)
 	})
 
+	h.waitForNodesToBeReady(t)
+
 	// Fail if there are any existing installations of the Helm chart.
 	h.checkForPriorInstallations(t)
 
@@ -430,6 +432,34 @@ func configurePodSecurityPolicies(t *testing.T, client kubernetes.Interface, cfg
 		client.PolicyV1beta1().PodSecurityPolicies().Delete(context.Background(), pspName, metav1.DeleteOptions{})
 		client.RbacV1().ClusterRoles().Delete(context.Background(), pspName, metav1.DeleteOptions{})
 		client.RbacV1().RoleBindings(namespace).Delete(context.Background(), pspName, metav1.DeleteOptions{})
+	})
+}
+
+func (h *HelmCluster) waitForNodesToBeReady(t *testing.T) {
+	retrier := &retry.Timer{Timeout: 20 * time.Minute, Wait: 5 * time.Second}
+	h.logger.Logf(t, "Waiting for nodes to be ready")
+	retry.RunWith(retrier, t, func(r *retry.R) {
+		nodes, err := h.kubernetesClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+		require.NoError(r, err)
+		for _, node := range nodes.Items {
+			var isMasterNode bool
+			for _, taint := range node.Spec.Taints {
+				if taint.Key == "node-role.kubernetes.io/master" {
+					// Skip "master" nodes.
+					isMasterNode = true
+					break
+				}
+			}
+			if !isMasterNode {
+				require.False(r, node.Spec.Unschedulable)
+				require.Empty(r, node.Spec.Taints)
+				for _, condition := range node.Status.Conditions {
+					if condition.Type == corev1.NodeReady {
+						require.Equal(r, corev1.ConditionTrue, condition.Status)
+					}
+				}
+			}
+		}
 	})
 }
 
