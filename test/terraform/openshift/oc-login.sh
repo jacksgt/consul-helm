@@ -14,3 +14,6 @@ echo "Creating the 'consul' project"
 # Idempotently, create and use the 'consul' project
 KUBECONFIG="$HOME/.kube/$cluster_name" oc new-project consul
 KUBECONFIG="$HOME/.kube/$cluster_name" oc project consul
+
+echo "Disable auto-update of the worker nodes based on config changes"
+KUBECONFIG="$HOME/.kube/$cluster_name" kubectl patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
