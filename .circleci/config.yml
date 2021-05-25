@@ -228,38 +228,6 @@ jobs:
       - run: mkdir -p $TEST_RESULTS
       - run-acceptance-tests:
           failfast: true
-          additional-flags: -use-kind -kubecontext="kind-dc1" -secondary-kubecontext="kind-dc2"
-      - store_test_results:
-          path: /tmp/test-results
-      - store_artifacts:
-          path: /tmp/test-results
-
-  acceptance-tproxy:
-    environment:
-      - TEST_RESULTS: /tmp/test-results
-    machine:
-      image: ubuntu-2004:202010-01
-    resource_class: xlarge
-    parallelism: 6
-    steps:
-      - checkout
-      - install-prereqs
-      - create-kind-clusters:
-          version: "v1.19.4"
-      - restore_cache:
-          keys:
-            - consul-helm-modcache-v2-{{ checksum "test/acceptance/go.mod" }}
-      - run:
-          name: go mod download
-          working_directory: test/acceptance
-          command: go mod download
-      - save_cache:
-          key: consul-helm-modcache-v2-{{ checksum "test/acceptance/go.mod" }}
-          paths:
-            - ~/.go_workspace/pkg/mod
-      - run: mkdir -p $TEST_RESULTS
-      - run-acceptance-tests:
-          failfast: true
           additional-flags: -use-kind -kubecontext="kind-dc1" -secondary-kubecontext="kind-dc2" -enable-transparent-proxy
       - store_test_results:
           path: /tmp/test-results
@@ -668,10 +636,6 @@ workflows:
       - unit-helm
       - acceptance-openshift
       - acceptance:
-          requires:
-            - unit-helm
-            - unit-acceptance-framework
-      - acceptance-tproxy:
           requires:
             - unit-helm
             - unit-acceptance-framework
